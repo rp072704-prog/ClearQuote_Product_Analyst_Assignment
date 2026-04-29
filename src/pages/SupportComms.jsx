@@ -57,8 +57,8 @@ function SupportComms() {
   }));
 
   // Alerts
-  const highBacklog = openTickets.length > 20;
-  const lowCsat = avgCsat < 3.5;
+  const highBacklog = openTickets.length > 10;
+  const lowCsat = avgCsat < 3.0;
 
   if (loading) return <LoadingState cards={4} chart />;
 

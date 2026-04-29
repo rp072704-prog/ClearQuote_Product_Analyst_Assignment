@@ -52,13 +52,12 @@ function UsageMetrics() {
     usage.forEach(r => { (byCustomer[r.customer_id] = byCustomer[r.customer_id] || []).push(r); });
     Object.entries(byCustomer).forEach(([cid, records]) => {
       const sorted = [...records].sort((a, b) => a.month.localeCompare(b.month));
-      if (sorted.length < 4) return;
-      const recent3 = sorted.slice(-4, -1);
+      if (sorted.length < 2) return;
+      const prevR = sorted[sorted.length - 2];
       const latestR = sorted[sorted.length - 1];
-      const avg3 = average(recent3.map(r => r.inspections));
-      if (avg3 > 0 && latestR.inspections < avg3 * 0.8) {
+      if (prevR.inspections > 0 && latestR.inspections < prevR.inspections * 0.8) {
         const name = customerById[cid]?.name || `Customer ${cid}`;
-        alerts.push(`${name}: inspections dropped to ${latestR.inspections} (3-mo avg: ${Math.round(avg3)})`);
+        alerts.push(`${name}: inspections dropped by >20% MoM (${prevR.inspections} → ${latestR.inspections})`);
       }
     });
     return alerts;

@@ -24,7 +24,10 @@ app.add_middleware(
 
 def latest_usage_for(customer_id):
   customer_usage = [record for record in USAGE if record["customer_id"] == customer_id]
-  return sorted(customer_usage, key=lambda record: record["month"])[-1]
+  sorted_usage = sorted(customer_usage, key=lambda record: record["month"])
+  if len(sorted_usage) >= 2:
+    return sorted_usage[-1], sorted_usage[-2]
+  return sorted_usage[-1] if sorted_usage else None, None
 
 
 def tickets_for(customer_id):
@@ -32,18 +35,26 @@ def tickets_for(customer_id):
 
 
 def build_customer_response(customer):
-  latest_usage = latest_usage_for(customer["id"])
+  latest_usage, prev_usage = latest_usage_for(customer["id"])
   ticket_summary = summarize_tickets(tickets_for(customer["id"]))
-  score = calculate_health_score(latest_usage, ticket_summary)
+  
+  mom_growth = 0.0
+  if prev_usage and prev_usage.get("inspections", 0) > 0:
+    mom_growth = (latest_usage["inspections"] - prev_usage["inspections"]) / prev_usage["inspections"]
+
+  score = calculate_health_score({
+    "growth": mom_growth,
+    "damage_rate": latest_usage["damage_rate"] if latest_usage else 0
+  }, ticket_summary)
 
   return {
     **customer,
     "usage": {
-      "growth": latest_usage["growth"],
-      "damage_rate": latest_usage["damage_rate"],
-      "latest_inspections": latest_usage["inspections"],
-      "active_drivers": latest_usage["active_drivers"],
-      "api_calls": latest_usage["api_calls"]
+      "growth": round(mom_growth, 3),
+      "damage_rate": latest_usage["damage_rate"] if latest_usage else 0,
+      "latest_inspections": latest_usage["inspections"] if latest_usage else 0,
+      "active_drivers": latest_usage["active_drivers"] if latest_usage else 0,
+      "api_calls": latest_usage["api_calls"] if latest_usage else 0
     },
     "tickets": ticket_summary,
     "health_score": score,

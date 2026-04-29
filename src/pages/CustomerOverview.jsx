@@ -66,7 +66,12 @@ function CustomerOverview() {
 
   const totalMrr = data.reduce((s, c) => s + c.MRR, 0);
   const avgHealth = average(data.map((c) => c.health_score));
-  const atRisk = data.filter((c) => c.health_score < 40);
+  const atRisk = data.filter((c) => (
+    c.health_score < 40 ||
+    c.usage.growth < -0.2 ||
+    c.tickets.open_count > 10 ||
+    c.tickets.avg_csat < 0.6
+  ));
   const watchList = data.filter((c) => c.health_score < 70).length;
 
   if (loading) return <LoadingState cards={4} chart />;
